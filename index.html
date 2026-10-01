@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12304D">
+<title>物料異常回報</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EAEFF3; --surface:#FFFFFF; --ink:#12304D; --muted:#4A5D70; --line:#BFCAD4;
+  --go:#06C755; --go-ink:#FFFFFF; --warn:#B3261E; --hl:#FFF1B8;
+  color-scheme: light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{font-size:20px;-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  font-weight:500;line-height:1.5;
+  padding-bottom:calc(120px + env(safe-area-inset-bottom,0px));
+}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:4px solid #2F7DE1;outline-offset:2px}
+
+header.top{background:var(--ink);color:#fff;padding:calc(16px + env(safe-area-inset-top,0px)) 16px 16px}
+.top-inner{max-width:640px;margin:0 auto}
+.top h1{margin:0;font-size:2.1rem;font-weight:900;letter-spacing:.06em;line-height:1.2}
+.top p{margin:4px 0 0;font-size:1rem;opacity:.85}
+
+main{max-width:640px;margin:0 auto;padding:14px 12px}
+.step{background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:16px 14px;margin-bottom:14px}
+.step h2{margin:0 0 12px;font-size:1.45rem;font-weight:900;display:flex;align-items:center;gap:10px}
+.num{flex:none;width:1.7em;height:1.7em;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:1.1rem}
+.hint{font-size:1rem;color:var(--muted);font-weight:500;margin:-6px 0 10px}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid.two{grid-template-columns:repeat(2,1fr)}
+.chip{min-height:70px;padding:6px;font-size:1.55rem;font-weight:700;background:#fff;border:3px solid var(--line);border-radius:12px;word-break:break-all}
+.grid.two .chip{font-size:1.35rem}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.chip.add{border-style:dashed;color:var(--muted);font-size:1.2rem}
+
+.addrow{display:none;gap:8px;margin-top:10px}
+.addrow.open{display:flex}
+.addrow input{flex:1;min-width:0;height:64px;font-size:1.4rem;padding:0 12px;border:3px solid var(--ink);border-radius:12px}
+.addrow button{flex:none;padding:0 18px;font-size:1.3rem;font-weight:700;border:none;border-radius:12px;background:var(--ink);color:#fff}
+
+.drow{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:10px}
+.drow + .drow{margin-top:4px}
+.drow label{flex:1;font-size:1.5rem;font-weight:700}
+.drow input{width:5.2em;height:64px;font-size:1.7rem;font-weight:700;text-align:right;padding:0 12px;border:3px solid var(--line);border-radius:12px;background:#fff}
+.drow.on{background:var(--hl)}
+.drow.on input{border-color:var(--ink)}
+.drow .x{font-size:1.4rem;color:var(--muted)}
+
+.btn{display:block;width:100%;min-height:66px;font-size:1.45rem;font-weight:900;border:none;border-radius:14px}
+.btn-main{background:var(--ink);color:#fff;margin-top:14px}
+.btn-ghost{background:#fff;color:var(--ink);border:3px solid var(--ink)}
+.btn-danger{background:#fff;color:var(--warn);border:3px solid var(--warn);font-size:1.2rem;min-height:56px;margin-top:12px}
+.err{color:var(--warn);font-size:1.15rem;font-weight:700;margin:10px 0 0;min-height:0}
+.err:empty{display:none}
+
+.entries{list-style:none;margin:0;padding:0}
+.entries li{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:2px solid var(--bg);font-size:1.3rem;font-weight:700}
+.entries li span{flex:1;word-break:break-all}
+.entries li button{flex:none;min-height:52px;padding:0 14px;font-size:1.1rem;font-weight:700;color:var(--warn);background:#fff;border:2px solid var(--warn);border-radius:10px}
+.empty{font-size:1.15rem;color:var(--muted);margin:0}
+
+.preview{margin:0;white-space:pre-wrap;word-break:break-all;font-family:inherit;font-size:1.3rem;font-weight:700;line-height:1.6;background:#F7F9FB;border-left:8px solid var(--go);border-radius:8px;padding:12px 14px}
+
+details.step summary{font-size:1.35rem;font-weight:900;list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;min-height:44px}
+details.step summary::-webkit-details-marker{display:none}
+details.step summary::after{content:"＋";font-size:1.5rem}
+details.step[open] summary::after{content:"－"}
+details.step[open] summary{margin-bottom:12px}
+
+.field{margin-bottom:14px}
+.field label{display:block;font-size:1.2rem;font-weight:700;margin-bottom:4px}
+.field input[type="text"]{width:100%;height:62px;font-size:1.4rem;padding:0 12px;border:3px solid var(--line);border-radius:12px}
+.check{display:flex;align-items:center;gap:12px;font-size:1.3rem;font-weight:700;min-height:56px}
+.check input{width:32px;height:32px;accent-color:var(--ink)}
+
+.custom-group h3{font-size:1.15rem;margin:14px 0 6px}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:1.2rem;font-weight:700;background:var(--bg);border-radius:10px;padding:6px 6px 6px 12px}
+.tag button{min-width:44px;min-height:44px;border:none;background:#fff;border-radius:8px;color:var(--warn);font-size:1.3rem;font-weight:900}
+
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:2px solid var(--line);padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));z-index:10}
+.bar-inner{max-width:640px;margin:0 auto;display:grid;grid-template-columns:1fr 1.8fr;gap:10px}
+.bar .btn{min-height:72px}
+.btn-line{background:var(--go);color:var(--go-ink);font-size:1.6rem;display:grid;place-items:center;text-decoration:none;text-align:center}
+
+.toast{white-space:pre-line;position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:var(--ink);color:#fff;font-size:1.5rem;font-weight:900;padding:18px 26px;border-radius:16px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;text-align:center;max-width:88vw}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+@media (max-width:360px){.grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <h1 id="titleText">物料異常</h1>
+    <p>選好後按最下方「傳到 LINE」</p>
+  </div>
+</header>
+
+<main>
+  <section class="step">
+    <h2><span class="num">1</span>容量</h2>
+    <div class="grid" id="capGrid"></div>
+    <div class="addrow" id="capAdd">
+      <input type="text" inputmode="numeric" placeholder="輸入容量，例如 600" aria-label="自訂容量">
+      <button type="button">新增</button>
+    </div>
+  </section>
+
+  <section class="step">
+    <h2><span class="num">2</span>材質</h2>
+    <div class="grid two" id="matGrid"></div>
+    <div class="addrow" id="matAdd">
+      <input type="text" placeholder="輸入材質，例如 PT瓶蓋" aria-label="自訂材質">
+      <button type="button">新增</button>
+    </div>
+  </section>
+
+  <section class="step">
+    <h2><span class="num">3</span>異常與數量</h2>
+    <p class="hint">有填數量的才會列入</p>
+    <div id="defList"></div>
+    <div class="addrow" id="defAdd">
+      <input type="text" placeholder="輸入異常，例如 黑點" aria-label="自訂異常狀況">
+      <button type="button">新增</button>
+    </div>
+    <button type="button" class="chip add" id="defAddToggle" style="width:100%;margin-top:10px">＋ 其他異常</button>
+    <p class="err" id="err" role="alert"></p>
+    <button type="button" class="btn btn-main" id="addEntry">加入這一筆</button>
+  </section>
+
+  <section class="step">
+    <h2><span class="num">4</span>確認回報內容</h2>
+    <ul class="entries" id="entries"></ul>
+    <p class="empty" id="emptyMsg">還沒有加入任何一筆，請從上方第 1 步開始。</p>
+    <h2 style="margin-top:18px">傳出的文字</h2>
+    <pre class="preview" id="preview"></pre>
+    <button type="button" class="btn btn-danger" id="clearAll">清除全部，重新填寫</button>
+  </section>
+
+  <details class="step">
+    <summary>附加資訊（選填）</summary>
+    <label class="check"><input type="checkbox" id="withTime">加上日期時間</label>
+    <div class="field">
+      <label for="reporter">回報人</label>
+      <input type="text" id="reporter" placeholder="可不填">
+    </div>
+    <div class="field">
+      <label for="lineName">產線／班別</label>
+      <input type="text" id="lineName" placeholder="可不填">
+    </div>
+  </details>
+
+  <details class="step">
+    <summary>設定</summary>
+    <div class="field">
+      <label for="titleInput">回報標題</label>
+      <input type="text" id="titleInput">
+    </div>
+    <button type="button" class="btn btn-ghost" id="titleReset" style="font-size:1.2rem;min-height:56px">還原為「物料異常」</button>
+    <div class="custom-group">
+      <h3>自己新增的容量</h3><div class="tags" id="tagCaps"></div>
+      <h3>自己新增的材質</h3><div class="tags" id="tagMats"></div>
+      <h3>自己新增的異常</h3><div class="tags" id="tagDefs"></div>
+    </div>
+  </details>
+</main>
+
+<div class="bar">
+  <div class="bar-inner">
+    <button type="button" class="btn btn-ghost" id="copyBtn">複製</button>
+    <a class="btn btn-line" id="sendBtn" href="#">傳到 LINE</a>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ===== 預設選項：要改固定選項就改這裡 ===== */
+const DEFAULTS = {
+  title: '物料異常',
+  caps: ['240', '300', '930', '471', '350', '1500'],
+  mats: ['pet空瓶', 'PT'],
+  defs: ['凹瓶', '成型不良', '瓶口不良', '破洞', '油汙']
+};
+const KEY = 'anomaly-report-v1';
+
+function loadSaved(){
+  try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ return {}; }
+}
+const saved = loadSaved();
+const S = {
+  title: saved.title || DEFAULTS.title,
+  customCaps: saved.customCaps || [],
+  customMats: saved.customMats || [],
+  customDefs: saved.customDefs || [],
+  withTime: !!saved.withTime,
+  reporter: saved.reporter || '',
+  lineName: saved.lineName || '',
+  entries: saved.entries || []
+};
+function persist(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+
+const allCaps = () => DEFAULTS.caps.concat(S.customCaps);
+const allMats = () => DEFAULTS.mats.concat(S.customMats);
+const allDefs = () => DEFAULTS.defs.concat(S.customDefs);
+
+let cur = { cap: null, mat: DEFAULTS.mats[0], qty: {} };
+
+const $ = id => document.getElementById(id);
+
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+/* ===== 選項按鈕 ===== */
+function renderChips(gridId, list, selected, onPick, addRowId){
+  const grid = $(gridId); grid.innerHTML = '';
+  list.forEach(v => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.textContent = v;
+    b.setAttribute('aria-pressed', v === selected ? 'true' : 'false');
+    b.onclick = () => onPick(v);
+    grid.appendChild(b);
+  });
+  const add = document.createElement('button');
+  add.type = 'button'; add.className = 'chip add'; add.textContent = '＋ 其他';
+  add.onclick = () => toggleAddRow(addRowId);
+  grid.appendChild(add);
+}
+function toggleAddRow(id){
+  const row = $(id); row.classList.toggle('open');
+  if (row.classList.contains('open')) row.querySelector('input').focus();
+}
+
+function renderCaps(){ renderChips('capGrid', allCaps(), cur.cap, v => { cur.cap = v; $('err').textContent=''; renderCaps(); }, 'capAdd'); }
+function renderMats(){ renderChips('matGrid', allMats(), cur.mat, v => { cur.mat = v; renderMats(); }, 'matAdd'); }
+
+function renderDefs(){
+  const box = $('defList'); box.innerHTML = '';
+  allDefs().forEach((d, i) => {
+    const row = document.createElement('div'); row.className = 'drow';
+    const id = 'q' + i;
+    const lab = document.createElement('label'); lab.htmlFor = id; lab.textContent = d;
+    const x = document.createElement('span'); x.className = 'x'; x.textContent = 'x';
+    const inp = document.createElement('input');
+    inp.id = id; inp.type = 'text'; inp.inputMode = 'numeric'; inp.pattern = '[0-9]*';
+    inp.placeholder = '0'; inp.value = cur.qty[d] || '';
+    if (cur.qty[d]) row.classList.add('on');
+    inp.oninput = () => {
+      inp.value = inp.value.replace(/[^0-9]/g, '');
+      cur.qty[d] = inp.value;
+      row.classList.toggle('on', +inp.value > 0);
+      $('err').textContent = '';
+    };
+    row.append(lab, x, inp);
+    box.appendChild(row);
+  });
+}
+
+/* ===== 自訂選項 ===== */
+function setupAdd(rowId, listKey, defaults, after){
+  const row = $(rowId), inp = row.querySelector('input'), btn = row.querySelector('button');
+  const go = () => {
+    const v = inp.value.trim();
+    if (!v) { inp.focus(); return; }
+    if (!defaults.includes(v) && !S[listKey].includes(v)) { S[listKey].push(v); persist(); }
+    inp.value = ''; row.classList.remove('open');
+    after(v); renderSettings();
+  };
+  btn.onclick = go;
+  inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+}
+setupAdd('capAdd', 'customCaps', DEFAULTS.caps, v => { cur.cap = v; renderCaps(); });
+setupAdd('matAdd', 'customMats', DEFAULTS.mats, v => { cur.mat = v; renderMats(); });
+setupAdd('defAdd', 'customDefs', DEFAULTS.defs, v => {
+  renderDefs();
+  const idx = allDefs().indexOf(v); const el = $('q' + idx); if (el) el.focus();
+});
+$('defAddToggle').onclick = () => toggleAddRow('defAdd');
+
+/* ===== 加入一筆 ===== */
+$('addEntry').onclick = () => {
+  if (!cur.cap) { $('err').textContent = '請先在第 1 步選容量'; return; }
+  const items = allDefs().map(d => [d, parseInt(cur.qty[d], 10) || 0]).filter(([, q]) => q > 0);
+  if (!items.length) { $('err').textContent = '請至少填一個異常的數量'; return; }
+
+  const same = S.entries.find(e => e.cap === cur.cap && e.mat === cur.mat);
+  if (same) {
+    items.forEach(([d, q]) => {
+      const it = same.items.find(x => x[0] === d);
+      if (it) it[1] += q; else same.items.push([d, q]);
+    });
+  } else {
+    S.entries.push({ cap: cur.cap, mat: cur.mat, items });
+  }
+  persist();
+  cur.cap = null; cur.qty = {};
+  renderCaps(); renderDefs(); renderEntries();
+  toast(same ? '已合併到同一筆' : '已加入');
+};
+
+/* ===== 文字組合 ===== */
+const entryText = e => `${e.cap}${e.mat} ` + e.items.map(([d, q]) => `${d}x${q}`).join('、');
+
+function nowText(){
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function buildText(){
+  if (!S.entries.length) return '';
+  const head = [S.title || DEFAULTS.title];
+  if (S.withTime) head.push(nowText());
+  if (S.reporter.trim()) head.push('回報人：' + S.reporter.trim());
+  if (S.lineName.trim()) head.push('產線／班別：' + S.lineName.trim());
+  return head.join('\n') + '\n\n' + S.entries.map(entryText).join('\n\n');
+}
+
+function renderEntries(){
+  const ul = $('entries'); ul.innerHTML = '';
+  S.entries.forEach((e, i) => {
+    const li = document.createElement('li');
+    const sp = document.createElement('span'); sp.textContent = entryText(e);
+    const del = document.createElement('button'); del.type = 'button'; del.textContent = '刪除';
+    del.onclick = () => { if (confirm('刪除這一筆？\n' + entryText(e))) { S.entries.splice(i, 1); persist(); renderEntries(); } };
+    li.append(sp, del); ul.appendChild(li);
+  });
+  $('emptyMsg').style.display = S.entries.length ? 'none' : '';
+  renderPreview();
+}
+function renderPreview(){
+  const text = buildText();
+  $('preview').textContent = text || '（加入資料後會顯示在這裡）';
+  $('sendBtn').href = text ? lineUrl(text) : '#';
+  $('titleText').textContent = S.title || DEFAULTS.title;
+}
+
+/* ===== 附加資訊 ===== */
+$('withTime').checked = S.withTime;
+$('reporter').value = S.reporter;
+$('lineName').value = S.lineName;
+$('withTime').onchange = e => { S.withTime = e.target.checked; persist(); renderPreview(); };
+$('reporter').oninput = e => { S.reporter = e.target.value; persist(); renderPreview(); };
+$('lineName').oninput = e => { S.lineName = e.target.value; persist(); renderPreview(); };
+
+/* ===== 設定 ===== */
+$('titleInput').value = S.title;
+$('titleInput').oninput = e => { S.title = e.target.value; persist(); renderPreview(); };
+$('titleReset').onclick = () => { S.title = DEFAULTS.title; $('titleInput').value = S.title; persist(); renderPreview(); toast('標題已還原'); };
+
+function renderTags(boxId, key, onRemove){
+  const box = $(boxId); box.innerHTML = '';
+  if (!S[key].length) { box.innerHTML = '<span class="empty">無</span>'; return; }
+  S[key].forEach(v => {
+    const t = document.createElement('span'); t.className = 'tag';
+    const s = document.createElement('span'); s.textContent = v;
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = '×';
+    b.setAttribute('aria-label', '移除 ' + v);
+    b.onclick = () => {
+      if (!confirm('移除選項「' + v + '」？')) return;
+      S[key] = S[key].filter(x => x !== v); persist(); onRemove(v); renderSettings();
+    };
+    t.append(s, b); box.appendChild(t);
+  });
+}
+function renderSettings(){
+  renderTags('tagCaps', 'customCaps', v => { if (cur.cap === v) cur.cap = null; renderCaps(); });
+  renderTags('tagMats', 'customMats', v => { if (cur.mat === v) cur.mat = DEFAULTS.mats[0]; renderMats(); });
+  renderTags('tagDefs', 'customDefs', v => { delete cur.qty[v]; renderDefs(); });
+}
+
+/* ===== 送出 / 複製 / 清除 ===== */
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+const lineUrl = text => 'https://line.me/R/share?text=' + encodeURIComponent(text);
+
+/* 用真正的連結讓手機系統直接交給 LINE App 開啟 */
+$('sendBtn').onclick = async e => {
+  const text = buildText();
+  if (!text) { e.preventDefault(); toast('請先加入至少一筆'); return; }
+  if (!isMobile) {
+    e.preventDefault();
+    try { await navigator.clipboard.writeText(text); } catch(err) {}
+    toast('電腦無法直接開啟 LINE\n已複製文字，請貼到 LINE');
+    return;
+  }
+  $('sendBtn').href = lineUrl(text);   // 點下當下更新時間
+};
+
+$('copyBtn').onclick = async () => {
+  const text = buildText();
+  if (!text) { toast('請先加入至少一筆'); return; }
+  try { await navigator.clipboard.writeText(text); }
+  catch(e) {
+    const ta = document.createElement('textarea'); ta.value = text;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+  }
+  toast('已複製');
+};
+
+$('clearAll').onclick = () => {
+  if (!S.entries.length) return;
+  if (!confirm('確定清除全部回報內容？')) return;
+  S.entries = []; cur = { cap: null, mat: cur.mat, qty: {} };
+  persist(); renderCaps(); renderDefs(); renderEntries(); toast('已清除');
+};
+
+renderCaps(); renderMats(); renderDefs(); renderEntries(); renderSettings();
+</script>
+</body>
+</html>
