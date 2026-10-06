@@ -66,7 +66,8 @@ main{max-width:640px;margin:0 auto;padding:14px 12px}
 
 .entries{list-style:none;margin:0;padding:0}
 .entries li{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:2px solid var(--bg);font-size:1.3rem;font-weight:700}
-.entries li span{flex:1;word-break:break-all}
+.entries li .txt{flex:1;word-break:break-all}
+.entries li .sum{display:block;font-size:1.1rem;color:var(--muted)}
 .entries li button{flex:none;min-height:52px;padding:0 14px;font-size:1.1rem;font-weight:700;color:var(--warn);background:#fff;border:2px solid var(--warn);border-radius:10px}
 .empty{font-size:1.15rem;color:var(--muted);margin:0}
 
@@ -196,6 +197,7 @@ const DEFAULTS = {
   defs: ['凹瓶', '成型不良', '瓶口不良', '破洞', '油汙', '貼標不良', '無貼標', '白化']
 };
 const KEY = 'anomaly-report-v1';
+const SEPARATOR = '------------------';   // 每一筆之間的分隔線
 
 function loadSaved(){
   try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ return {}; }
@@ -314,7 +316,11 @@ $('addEntry').onclick = () => {
 };
 
 /* ===== 文字組合 ===== */
-const entryText = e => `${e.cap}${e.mat} ` + e.items.map(([d, q]) => `${d}x${q}`).join('、');
+const entryName  = e => `${e.cap}${e.mat.trim()}`;                         // 例：240PET空瓶
+const entryTotal = e => e.items.reduce((sum, [, q]) => sum + q, 0);         // 這一筆的異常總數
+const entryText  = e => `${entryName(e)} ` + e.items.map(([d, q]) => `${d}x${q}`).join('、');
+const totalText  = e => `${entryName(e)}異常總數為：${entryTotal(e)}`;
+const entryBlock = e => entryText(e) + '\n' + totalText(e);
 
 function nowText(){
   const d = new Date(), p = n => String(n).padStart(2, '0');
@@ -326,14 +332,16 @@ function buildText(){
   if (S.withTime) head.push(nowText());
   if (S.reporter.trim()) head.push('回報人：' + S.reporter.trim());
   if (S.lineName.trim()) head.push('產線／班別：' + S.lineName.trim());
-  return head.join('\n') + '\n\n' + S.entries.map(entryText).join('\n\n');
+  return head.join('\n') + '\n\n' + S.entries.map(entryBlock).join('\n' + SEPARATOR + '\n');
 }
 
 function renderEntries(){
   const ul = $('entries'); ul.innerHTML = '';
   S.entries.forEach((e, i) => {
     const li = document.createElement('li');
-    const sp = document.createElement('span'); sp.textContent = entryText(e);
+    const sp = document.createElement('span'); sp.className = 'txt'; sp.textContent = entryText(e);
+    const sum = document.createElement('span'); sum.className = 'sum'; sum.textContent = '異常總數：' + entryTotal(e);
+    sp.appendChild(sum);
     const del = document.createElement('button'); del.type = 'button'; del.textContent = '刪除';
     del.onclick = () => { if (confirm('刪除這一筆？\n' + entryText(e))) { S.entries.splice(i, 1); persist(); renderEntries(); } };
     li.append(sp, del); ul.appendChild(li);
