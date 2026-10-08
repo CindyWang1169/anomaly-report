@@ -153,7 +153,7 @@ details.step[open] summary{margin-bottom:12px}
 
   <details class="step">
     <summary>附加資訊（選填）</summary>
-    <label class="check"><input type="checkbox" id="withTime">加上日期時間</label>
+    <label class="check"><input type="checkbox" id="withTime">加上日期</label>
     <div class="field">
       <label for="reporter">回報人</label>
       <input type="text" id="reporter" placeholder="可不填">
@@ -193,7 +193,7 @@ details.step[open] summary{margin-bottom:12px}
 const DEFAULTS = {
   title: '物料異常',
   caps: ['240', '300', '930', '471', '350', '1500'],
-  mats: ['PET空瓶 ','PET無加糖', 'PT'],
+  mats: ['PET空瓶 ','PET無加糖', '好朋友'],
   defs: ['凹瓶', '成型不良', '瓶口不良', '破洞', '油汙', '貼標不良', '無貼標', '白化']
 };
 const KEY = 'anomaly-report-v1';
@@ -324,7 +324,7 @@ const entryBlock = e => entryText(e) + '\n' + totalText(e);
 
 function nowText(){
   const d = new Date(), p = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}`;  //時間：${p(d.getHours())}:${p(d.getMinutes())}
 }
 function buildText(){
   if (!S.entries.length) return '';
