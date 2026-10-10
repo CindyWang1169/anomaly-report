@@ -89,6 +89,9 @@ details.step[open] summary{margin-bottom:12px}
 .field{margin-bottom:14px}
 .field label{display:block;font-size:1.2rem;font-weight:700;margin-bottom:4px}
 .field input[type="text"]{width:100%;height:62px;font-size:1.4rem;padding:0 12px;border:3px solid var(--line);border-radius:12px}
+.affix{display:flex;align-items:center;gap:8px;font-size:1.4rem;font-weight:700}
+.affix span{flex:none}
+.affix input[type="text"]{flex:1;min-width:0}
 .check{display:flex;align-items:center;gap:12px;font-size:1.3rem;font-weight:700;min-height:56px}
 .check input{width:32px;height:32px;accent-color:var(--ink)}
 
@@ -114,14 +117,30 @@ details.step[open] summary{margin-bottom:12px}
 
 <header class="top">
   <div class="top-inner">
-    <h1 id="titleText">物料異常</h1>
+    <h1>物料異常</h1>
     <p>選好後按最下方「傳到 LINE」</p>
   </div>
 </header>
 
 <main>
   <section class="step">
-    <h2><span class="num">1</span>容量</h2>
+    <h2><span class="num">1</span>時間線別</h2>
+    <div class="field">
+      <label for="reportDate">回報時間</label>
+      <input type="text" id="reportDate" inputmode="decimal" placeholder="例如 11510.07">
+    </div>
+    <div class="field">
+      <label for="reportLine">回報線別</label>
+      <div class="affix">
+        <span>新市廠</span>
+        <input type="text" id="reportLine" placeholder="例如 包裝10">
+        <span>線</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="step">
+    <h2><span class="num">2</span>容量</h2>
     <div class="grid" id="capGrid"></div>
     <div class="addrow" id="capAdd">
       <input type="text" inputmode="numeric" placeholder="輸入容量，例如 600" aria-label="自訂容量">
@@ -130,7 +149,7 @@ details.step[open] summary{margin-bottom:12px}
   </section>
 
   <section class="step">
-    <h2><span class="num">2</span>材質</h2>
+    <h2><span class="num">3</span>材質</h2>
     <div class="grid two" id="matGrid"></div>
     <div class="addrow" id="matAdd">
       <input type="text" placeholder="輸入材質，例如 PT瓶蓋" aria-label="自訂材質">
@@ -139,7 +158,7 @@ details.step[open] summary{margin-bottom:12px}
   </section>
 
   <section class="step">
-    <h2><span class="num">3</span>異常與數量</h2>
+    <h2><span class="num">4</span>異常與數量</h2>
     <p class="hint">有填數量的才會列入</p>
     <div id="defList"></div>
     <div class="addrow" id="defAdd">
@@ -152,7 +171,7 @@ details.step[open] summary{margin-bottom:12px}
   </section>
 
   <section class="step">
-    <h2><span class="num">4</span>確認回報內容</h2>
+    <h2><span class="num">5</span>確認回報內容</h2>
     <ul class="entries" id="entries"></ul>
     <p class="empty" id="emptyMsg">還沒有加入任何一筆，請從上方第 1 步開始。</p>
     <h2 style="margin-top:18px">傳出的文字</h2>
@@ -161,25 +180,28 @@ details.step[open] summary{margin-bottom:12px}
   </section>
 
   <details class="step">
-    <summary>附加資訊（選填）</summary>
-    <label class="check"><input type="checkbox" id="withTime">加上日期</label>
+    <summary>結尾資訊（已預設填好）</summary>
     <div class="field">
-      <label for="reporter">回報人</label>
-      <input type="text" id="reporter" placeholder="可不填">
+      <label for="ftDelay">延遲工時</label>
+      <input type="text" id="ftDelay">
     </div>
     <div class="field">
-      <label for="lineName">產線／班別</label>
-      <input type="text" id="lineName" placeholder="可不填">
+      <label for="ftStaff">增派人力</label>
+      <input type="text" id="ftStaff">
     </div>
+    <div class="field">
+      <label for="ftNote">其他說明</label>
+      <input type="text" id="ftNote">
+    </div>
+    <div class="field">
+      <label for="ftAttach">附件</label>
+      <input type="text" id="ftAttach">
+    </div>
+    <button type="button" class="btn btn-ghost" id="footerReset" style="font-size:1.2rem;min-height:56px">還原為預設內容</button>
   </details>
 
   <details class="step">
     <summary>設定</summary>
-    <div class="field">
-      <label for="titleInput">回報標題</label>
-      <input type="text" id="titleInput">
-    </div>
-    <button type="button" class="btn btn-ghost" id="titleReset" style="font-size:1.2rem;min-height:56px">還原為「物料異常」</button>
     <div class="custom-group">
       <h3>自己新增的容量</h3><div class="tags" id="tagCaps"></div>
       <h3>自己新增的材質</h3><div class="tags" id="tagMats"></div>
@@ -201,26 +223,36 @@ details.step[open] summary{margin-bottom:12px}
 <script>
 /* ===== 預設選項：要改固定選項就改這裡 ===== */
 const DEFAULTS = {
-  title: '物料異常',
   caps: ['240', '300', '930', '471', '350', '1500'],
   mats: ['PET空瓶 ','PET無加糖', '好朋友'],
-  defs: ['凹瓶', '成型不良', '瓶口不良', '破洞', '油汙', '貼標不良', '無貼標', '白化']
+  defs: ['凹瓶', '成型不良', '瓶口不良', '破洞', '油汙', '貼標不良', '無貼標', '白化', '黑點/斷環入B'],
+  /* 回報最下方的固定欄位（使用者可修改） */
+  footer: {
+    delay:  '無，生產中挑選',
+    staff:  '無',
+    note:   '無',
+    attach: '異常品照片、異常品外箱標籤'
+  }
 };
+const LAST_DEF = '黑點/斷環入B';   // 這個異常一律排在最後
+const FOOTER_FIELDS = [            // [欄位, 輸入框 id, 輸出標籤]
+  ['delay',  'ftDelay',  '延遲工時'],
+  ['staff',  'ftStaff',  '增派人力'],
+  ['note',   'ftNote',   '其他說明'],
+  ['attach', 'ftAttach', '附件']
+];
 const KEY = 'anomaly-report-v1';
-const SEPARATOR = '------------------';   // 每一筆之間的分隔線
 
 function loadSaved(){
   try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ return {}; }
 }
 const saved = loadSaved();
 const S = {
-  title: saved.title || DEFAULTS.title,
   customCaps: saved.customCaps || [],
   customMats: saved.customMats || [],
   customDefs: saved.customDefs || [],
-  withTime: !!saved.withTime,
-  reporter: saved.reporter || '',
-  lineName: saved.lineName || '',
+  reportLine: saved.reportLine || '',
+  footer: Object.assign({}, DEFAULTS.footer, saved.footer),
   entries: saved.entries || []
 };
 function persist(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
@@ -306,7 +338,7 @@ $('defAddToggle').onclick = () => toggleAddRow('defAdd');
 
 /* ===== 加入一筆 ===== */
 $('addEntry').onclick = () => {
-  if (!cur.cap) { $('err').textContent = '請先在第 1 步選容量'; return; }
+  if (!cur.cap) { $('err').textContent = '請先在第 2 步選容量'; return; }
   const items = allDefs().map(d => [d, parseInt(cur.qty[d], 10) || 0]).filter(([, q]) => q > 0);
   if (!items.length) { $('err').textContent = '請至少填一個異常的數量'; return; }
 
@@ -326,23 +358,43 @@ $('addEntry').onclick = () => {
 };
 
 /* ===== 文字組合 ===== */
-const entryName  = e => `${e.cap}${e.mat.trim()}`;                         // 例：240PET空瓶
-const entryTotal = e => e.items.reduce((sum, [, q]) => sum + q, 0);         // 這一筆的異常總數
-const entryText  = e => `${entryName(e)} ` + e.items.map(([d, q]) => `${d}x${q}`).join('、');
-const totalText  = e => `${entryName(e)}異常總數為：${entryTotal(e)}`;
-const entryBlock = e => entryText(e) + '\n' + totalText(e);
+/* 異常排序：照選項順序，「黑點/斷環入B」固定排最後 */
+const defRank = d => d === LAST_DEF ? Infinity : (allDefs().indexOf(d) + 1 || 9999);
+const byDef   = (a, b) => defRank(a) - defRank(b);
 
-function nowText(){
+const entryName  = e => `${e.cap}${e.mat.trim()}`;                         // 例：240PET空瓶
+const entryItems = e => e.items.slice().sort((a, b) => byDef(a[0], b[0]));
+const entryTotal = e => e.items.reduce((sum, [, q]) => sum + q, 0);         // 這一筆的異常總數
+const entryText  = e => `${entryName(e)} ` + entryItems(e).map(([d, q]) => `${d}x${q}`).join('、');
+const entryBlock = e => [`${entryName(e)}：`]
+  .concat(entryItems(e).map(([d, q]) => `${d}x${q}`), `異常總數為：${entryTotal(e)}`)
+  .join('\n');
+
+/* 民國日期，例：11510.07 */
+function rocDate(){
   const d = new Date(), p = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}`;  //時間：${p(d.getHours())}:${p(d.getMinutes())}
+  return `${d.getFullYear() - 1911}${p(d.getMonth()+1)}.${p(d.getDate())}`;
 }
+let reportDate = rocDate();   // 每次開網頁都帶入今天，不存起來
 function buildText(){
   if (!S.entries.length) return '';
-  const head = [S.title || DEFAULTS.title];
-  if (S.withTime) head.push(nowText());
-  if (S.reporter.trim()) head.push('回報人：' + S.reporter.trim());
-  if (S.lineName.trim()) head.push('產線／班別：' + S.lineName.trim());
-  return head.join('\n') + '\n\n' + S.entries.map(entryBlock).join('\n' + SEPARATOR + '\n');
+  const lines = [];
+  if (reportDate.trim()) lines.push('回報時間：' + reportDate.trim());
+  if (S.reportLine.trim()) lines.push('回報線別：新市廠 ' + S.reportLine.trim() + '線');
+
+  // 異常項目：有出現的容量材質
+  lines.push('','異常項目：', ...S.entries.map(entryName));
+
+  // 異常說明：有出現的異常（不重複）
+  const defs = [...new Set(S.entries.flatMap(e => e.items.map(([d]) => d)))].sort(byDef);
+  lines.push('','異常說明：', ...defs);
+
+  lines.push('','異常數量：', ...S.entries.map(entryBlock));
+
+  const foot = FOOTER_FIELDS
+    .filter(([k]) => S.footer[k].trim())
+    .map(([k, , label]) => `${label}：${S.footer[k].trim()}`);
+  return lines.join('\n') + (foot.length ? '\n\n' + foot.join('\n') : '');
 }
 
 function renderEntries(){
@@ -362,22 +414,26 @@ function renderEntries(){
 function renderPreview(){
   const text = buildText();
   $('preview').textContent = text || '（加入資料後會顯示在這裡）';
-  $('sendBtn').href = text ? lineUrl(text) : '#';
-  $('titleText').textContent = S.title || DEFAULTS.title;
-}
+  $('sendBtn').href = text ? lineUrl(text) : '#';}
 
-/* ===== 附加資訊 ===== */
-$('withTime').checked = S.withTime;
-$('reporter').value = S.reporter;
-$('lineName').value = S.lineName;
-$('withTime').onchange = e => { S.withTime = e.target.checked; persist(); renderPreview(); };
-$('reporter').oninput = e => { S.reporter = e.target.value; persist(); renderPreview(); };
-$('lineName').oninput = e => { S.lineName = e.target.value; persist(); renderPreview(); };
+/* ===== 時間線別 ===== */
+$('reportDate').value = reportDate;
+$('reportLine').value = S.reportLine;
+$('reportDate').oninput = e => { reportDate = e.target.value; renderPreview(); };
+$('reportLine').oninput = e => { S.reportLine = e.target.value; persist(); renderPreview(); };
+
+/* ===== 結尾資訊 ===== */
+FOOTER_FIELDS.forEach(([k, id]) => {
+  $(id).value = S.footer[k];
+  $(id).oninput = e => { S.footer[k] = e.target.value; persist(); renderPreview(); };
+});
+$('footerReset').onclick = () => {
+  S.footer = Object.assign({}, DEFAULTS.footer);
+  FOOTER_FIELDS.forEach(([k, id]) => { $(id).value = S.footer[k]; });
+  persist(); renderPreview(); toast('已還原');
+};
 
 /* ===== 設定 ===== */
-$('titleInput').value = S.title;
-$('titleInput').oninput = e => { S.title = e.target.value; persist(); renderPreview(); };
-$('titleReset').onclick = () => { S.title = DEFAULTS.title; $('titleInput').value = S.title; persist(); renderPreview(); toast('標題已還原'); };
 
 function renderTags(boxId, key, onRemove){
   const box = $(boxId); box.innerHTML = '';
