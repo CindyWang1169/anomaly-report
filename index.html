@@ -367,7 +367,7 @@ const entryItems = e => e.items.slice().sort((a, b) => byDef(a[0], b[0]));
 const entryTotal = e => e.items.reduce((sum, [, q]) => sum + q, 0);         // 這一筆的異常總數
 const entryText  = e => `${entryName(e)} ` + entryItems(e).map(([d, q]) => `${d}x${q}`).join('、');
 const entryBlock = e => [`${entryName(e)}：`]
-  .concat(entryItems(e).map(([d, q]) => `${d}x${q}`), `異常總數為：${entryTotal(e)}`)
+  .concat(entryItems(e).map(([d, q]) => `${d}x${q}`)) // `異常總數為：${entryTotal(e)}`
   .join('\n');
 
 /* 民國日期，例：11510.07 */
